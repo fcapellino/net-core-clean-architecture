@@ -41,7 +41,7 @@
 
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(Configuration)'=='Debug'">
-    <Exec Command="&quot;$(ProjectDir)SettingsEncryptor\appSettingsEncryptor.exe&quot; &quot;$(ProjectDir)&quot;" />
+    <Exec Command="$(ProjectDir)SettingsEncryptor\appSettingsEncryptor.exe $(ProjectDir)" />
   </Target>
 
 
