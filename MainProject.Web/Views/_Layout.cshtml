@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Autenticapp - Panel de Administración</title>
+    <environment include="Development,Production">
+        <link type="image/x-icon" rel="icon" href="~/images/favicon.ico">
+        <link type="text/css" href="~/css/layout/vuetify.css" rel="stylesheet" />
+        <link type="text/css" href="~/css/layout/common.css" rel="stylesheet" />
+    </environment>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <v-app v-cloak id="inspire">
+            <v-navigation-drawer permanent
+                                 fixed
+                                 clipped
+                                 app
+                                 v-model="drawer"
+                                 style="width:210px">
+                <v-list dense>
+                    <v-list-tile v-on:click.stop="utils.redirectToUrl('/users')">
+                        <v-list-tile-action style="min-width:30px;">
+                            <v-icon>fast_forward</v-icon>
+                        </v-list-tile-action>
+                        <v-list-tile-content>
+                            <v-list-tile-title>
+                                USUARIOS
+                            </v-list-tile-title>
+                        </v-list-tile-content>
+                    </v-list-tile>
+                    <v-list-tile v-on:click.stop="utils.redirectToUrl('/errorlog')">
+                        <v-list-tile-action style="min-width:30px;">
+                            <v-icon>fast_forward</v-icon>
+                        </v-list-tile-action>
+                        <v-list-tile-content>
+                            <v-list-tile-title>
+                                REGISTRO DE ERRORES
+                            </v-list-tile-title>
+                        </v-list-tile-content>
+                    </v-list-tile>
+                </v-list>
+            </v-navigation-drawer>
+            <v-toolbar color="primary"
+                       dark
+                       app
+                       clipped-left
+                       fixed>
+                <v-toolbar-title class="ml-0 pl-3">
+                    <span>Autenticapp - Panel de Administración</span>
+                </v-toolbar-title>
+                <v-spacer></v-spacer>
+                <v-toolbar-title class="caption" style="text-align:end;">
+                    <div>@User.FindFirst(ClaimTypes.GivenName).Value.ToUpper()</div>
+                    <div><small>@User.FindFirst(ClaimTypes.Role).Value.ToUpper()</small></div>
+                </v-toolbar-title>
+                <v-menu bottom left>
+                    <v-btn slot="activator"
+                           dark
+                           icon>
+                        <v-icon>account_box</v-icon>
+                    </v-btn>
+                    <v-form action="/accounts/logout" method="post" id="logoutform">
+                        @Html.AntiForgeryToken()
+                        <v-list>
+                            <div class="v-list__tile v-list__tile--link theme--light">
+                                <v-list-tile-title v-on:click.stop="changePasswordDialog.show=true">
+                                    Cambiar contraseña
+                                </v-list-tile-title>
+                            </div>
+                            <button class="v-list__tile v-list__tile--link theme--light"
+                                    style="width:100%"
+                                    type="submit"
+                                    form="logoutform">
+                                Cerrar sesión
+                            </button>
+                        </v-list>
+                    </v-form>
+                </v-menu>
+            </v-toolbar>
+            <v-content style="padding-left:210px">
+                <v-container fluid grid-list-md>
+                    <v-layout row wrap align-top>
+                        @RenderBody()
+                        <v-dialog v-model="changePasswordDialog.show" fullscreen hide-overlay transition="dialog-bottom-transition">
+                            <v-card>
+                                <v-toolbar dark color="primary">
+                                    <v-toolbar-title>Cambiar contraseña</v-toolbar-title>
+                                    <v-spacer></v-spacer>
+                                    <v-toolbar-items>
+                                        <v-btn icon dark v-on:click.stop="closeChangePasswordDialog()">
+                                            <v-icon>close</v-icon>
+                                        </v-btn>
+                                    </v-toolbar-items>
+                                </v-toolbar>
+                                <v-card-text>
+                                    <v-form ref="changePasswordForm">
+                                        <v-container>
+                                            <v-layout row justify-center>
+                                                <v-flex xs3>
+                                                    <v-text-field v-model.trim="changePasswordDialog.oldPassword"
+                                                                  label="Contraseña actual"
+                                                                  prepend-inner-icon="lock"
+                                                                  box
+                                                                  type="password"
+                                                                  :rules="[v => (!!v && !utils.isNullOrEmpty(v)) || 'El campo es obligatorio']">
+                                                    </v-text-field>
+                                                </v-flex>
+                                                <v-flex xs3>
+                                                    <v-text-field v-model.trim="changePasswordDialog.newPassword"
+                                                                  label="Nueva contraseña"
+                                                                  prepend-inner-icon="lock"
+                                                                  box
+                                                                  type="password"
+                                                                  :rules="[v => (!!v && !utils.isNullOrEmpty(v)) || 'El campo es obligatorio', v => (v && v.length >=8) || 'La contraseña debe tener al menos ocho carateres.']">
+                                                    </v-text-field>
+                                                </v-flex>
+                                                <v-flex xs3>
+                                                    <v-text-field v-model.trim="changePasswordDialog.confirmedPassword"
+                                                                  label="Confirmar nueva contraseña"
+                                                                  prepend-inner-icon="lock"
+                                                                  box
+                                                                  type="password"
+                                                                  :rules="[v => (!!v && !utils.isNullOrEmpty(v)) || 'El campo es obligatorio', changePasswordDialog.confirmedPassword==changePasswordDialog.newPassword || 'Las contraseñas no coinciden.']"></v-text-field>
+                                                </v-flex>
+                                            </v-layout>
+                                            <v-layout row justify-center>
+                                                <v-flex xs9 style="text-align:right;">
+                                                    <v-btn color="green" style="background-color:aliceblue" flat v-bind:disabled="pendingRequest" v-on:click.stop="changePassword()">ACEPTAR</v-btn>
+                                                    <v-btn color="green" style="background-color:aliceblue;margin-right: 0px;" flat v-bind:disabled="pendingRequest" v-on:click.stop="closeChangePasswordDialog()">CANCELAR</v-btn>
+                                                </v-flex>
+                                            </v-layout>
+                                        </v-container>
+                                        <v-divider></v-divider>
+                                    </v-form>
+                                </v-card-text>
+                            </v-card>
+                        </v-dialog>
+                        <v-snackbar v-model="snackbar.show"
+                                    :timeout="snackbar.timeout"
+                                    :color="snackbar.type"
+                                    auto-height
+                                    bottom
+                                    right
+                                    vertical>
+                            <p style="margin:0px;">{{ snackbar.message }}</p>
+                            <v-btn dark flat
+                                   v-on:click.stop="snackbar.show=false">
+                                CERRAR
+                            </v-btn>
+                        </v-snackbar>
+                    </v-layout>
+                </v-container>
+            </v-content>
+            <v-footer class="pa-2">
+                <v-spacer></v-spacer>
+                <div>Ingeniería en Sistemas de Información - UTN Facultad Regional San Francisco &copy; 2020</div>
+            </v-footer>
+        </v-app>
+    </div>
+    @Html.AntiForgeryTokenTag()
+    @RenderSection("Scripts", required: false)
+    <environment include="Development,Production">
+        <script type="text/javascript" src="~/js/layout/axios.js"></script>
+        <script type="text/javascript" src="~/js/layout/lodash.js"></script>
+        <script type="text/javascript" src="~/js/layout/signalr.js"></script>
+        <script type="text/javascript" src="~/js/layout/vuetify.js"></script>
+        <script type="text/javascript" src="~/js/layout/common.js"></script>
+        <script type="text/javascript" src="~/js/layout/main.js"></script>
+    </environment>
+</body>
+</html>

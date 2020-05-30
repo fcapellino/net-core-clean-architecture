@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "axios@0.19.2",
+      "destination": "wwwroot/libraries/axios/",
+      "files": [
+        "axios.min.js"
+      ]
+    },
+    {
+      "library": "babel-polyfill@7.10.1",
+      "destination": "wwwroot/libraries/polyfill/",
+      "files": [
+        "polyfill.min.js"
+      ]
+    },
+    {
+      "library": "vue@2.6.11",
+      "destination": "wwwroot/libraries/vue/",
+      "files": [
+        "vue.min.js"
+      ]
+    },
+    {
+      "library": "vuetify@2.2.23",
+      "destination": "wwwroot/libraries/vuetify/",
+      "files": [
+        "vuetify.min.css",
+        "vuetify.min.js"
+      ]
+    },
+    {
+      "provider": "jsdelivr",
+      "library": "@mdi/font@5.3.45",
+      "destination": "wwwroot/libraries/mdi/font/",
+      "files": [
+        "css/materialdesignicons.min.css"
+      ]
+    },
+    {
+      "library": "aspnet-signalr@1.1.4",
+      "destination": "wwwroot/libraries/signalr/",
+      "files": [
+        "signalr.min.js"
+      ]
+    },
+    {
+      "library": "lodash.js@4.17.15",
+      "destination": "wwwroot/libraries/lodash/",
+      "files": [
+        "lodash.min.js"
+      ]
+    }
+  ]
+}

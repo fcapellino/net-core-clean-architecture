@@ -1,0 +1,169 @@
+﻿@{
+    Layout = "~/Views/_Layout.cshtml";
+}
+
+<v-flex d-flex xs12>
+    <v-card>
+        <v-form ref="userForm">
+            <v-layout row wrap style="margin:3px;">
+                <v-flex flex sm4>
+                    <v-select v-model="usersTable.filters.roleId"
+                              :items="usersRoleList"
+                              no-data-text="No hay datos disponibles"
+                              item-value="id"
+                              item-text="name"
+                              label="Rol"
+                              clearable>
+                    </v-select>
+                </v-flex>
+                <v-flex flex sm4>
+                    <v-text-field v-model.trim="usersTable.filters.searchQuery"
+                                  label="Búsqueda"
+                                  :hint="`${('Ingrese un término de búsqueda')}`"
+                                  clearable>
+                    </v-text-field>
+                </v-flex>
+                <v-spacer></v-spacer>
+                @if (User.IsInRole(MainProject.Common.UserRoles.Administrador))
+                {
+                    <v-flex flex style="text-align:right;padding-top:20px;">
+                        <v-btn small color="primary" v-on:click.stop="showUserDialog()">NUEVO USUARIO</v-btn>
+                    </v-flex>
+                }
+            </v-layout>
+        </v-form>
+    </v-card>
+</v-flex>
+
+<v-flex d-flex xs12>
+    <v-card>
+        <v-data-table :headers="usersTable.headers"
+                      :items="usersTable.itemsList"
+                      :pagination.sync="usersTable.pagination"
+                      :total-items="usersTable.totalItemCount"
+                      :loading="usersTable.loading"
+                      :rows-per-page-items="[5,10,15,20]"
+                      disable-initial-sort
+                      no-data-text="No hay datos disponibles"
+                      rows-per-page-text="Items por página"
+                      class="elevation-1">
+            <template slot="items" slot-scope="props">
+                <td class="justify-left layout" style="margin-top:15px">
+                    @if (User.IsInRole(MainProject.Common.UserRoles.Administrador))
+                    {
+                        <v-tooltip bottom>
+                            <v-icon slot="activator"
+                                    v-on:click.stop="showUserDialog(props.item,false)">
+                                edit
+                            </v-icon>
+                            <span>Editar</span>
+                        </v-tooltip>
+                        <v-tooltip bottom>
+                            <v-icon slot="activator"
+                                    v-on:click.stop="showUserDialog(props.item,true,true)">
+                                delete
+                            </v-icon>
+                            <span>Eliminar</span>
+                        </v-tooltip>
+                    }
+                    <v-tooltip bottom>
+                        <v-icon slot="activator"
+                                v-on:click.stop="showUserDialog(props.item,true)">
+                            search
+                        </v-icon>
+                        <span>Detalles</span>
+                    </v-tooltip>
+                </td>
+                <td class="body-2">{{ (((usersTable.pagination.page-1)*usersTable.pagination.rowsPerPage)+props.index+1).toString().padStart(5,'0') }}</td>
+                <td class="body-2">{{ props.item.firstName }}</td>
+                <td class="body-2">{{ props.item.lastName }}</td>
+                <td class="body-2">{{ props.item.email }}</td>
+                <td class="body-2">{{ props.item.role.name.toUpperCase() }}</td>
+                <td class="body-2">
+                    <p style="margin-bottom:0px" v-bind:class="[props.item.isDisabled? 'body-2 p-red' : 'body-2 p-green']">
+                        {{ props.item.isDisabled? 'Deshabilitado':'Habilitado' }}
+                    </p>
+                </td>
+            </template>
+        </v-data-table>
+    </v-card>
+</v-flex>
+
+<v-dialog v-model="userDialog.show" persistent max-width="600px">
+    <v-card>
+        <v-card-title>
+            <span v-if="!userDialog.data.id" class="headline">Nuevo usuario</span>
+            <span v-else-if="userDialog.data.id && userDialog.deletion" class="headline">¿Desea eliminar este usuario?</span>
+            <span v-else-if="userDialog.data.id && userDialog.readonly" class="headline">Detalle de usuario</span>
+            <span v-else class="headline">Editar usuario</span>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text>
+            <v-form ref="userDataForm">
+                <v-container grid-list-md>
+                    <v-layout wrap>
+                        <v-flex xs12>
+                            <v-text-field v-model="userDialog.data.id"
+                                          label="Id"
+                                          disabled
+                                          style="display:none;">
+                            </v-text-field>
+                        </v-flex>
+                        <v-flex xs6>
+                            <v-text-field v-model.trim="userDialog.data.firstName"
+                                          label="Nombre"
+                                          :disabled="userDialog.readonly"
+                                          :rules="[v => (!!v && !utils.isNullOrEmpty(v)) || 'El campo es obligatorio']">
+                            </v-text-field>
+                        </v-flex>
+                        <v-flex xs6>
+                            <v-text-field v-model.trim="userDialog.data.lastName"
+                                          label="Apellido"
+                                          :disabled="userDialog.readonly"
+                                          :rules="[v => (!!v && !utils.isNullOrEmpty(v)) || 'El campo es obligatorio']">
+                            </v-text-field>
+                        </v-flex>
+                        <v-flex xs12>
+                            <v-text-field v-model.trim="userDialog.data.email"
+                                          label="Email"
+                                          :disabled="userDialog.readonly"
+                                          :rules="[v => (!!v && utils.validateEmail(v)) || 'El campo es obligatorio']">
+                            </v-text-field>
+                        </v-flex>
+                        <v-flex xs6>
+                            <v-select v-model="userDialog.data.role"
+                                      :items="usersRoleList"
+                                      item-value="id"
+                                      item-text="name"
+                                      label="Rol"
+                                      :disabled="userDialog.readonly"
+                                      :rules="[v => v!=null || 'El campo es obligatorio']"
+                                      return-object>
+                            </v-select>
+                        </v-flex>
+                        <v-flex xs6>
+                            <v-select v-model="userDialog.data.isDisabled"
+                                      :items="[{ value: false, text: 'Habilitado' },{ value: true, text: 'Deshabilitado' }]"
+                                      item-value="value"
+                                      item-text="text"
+                                      label="Estado"
+                                      :disabled="userDialog.readonly"
+                                      :rules="[v => v!=null || 'El campo es obligatorio']"
+                                      required>
+                            </v-select>
+                        </v-flex>
+                    </v-layout>
+                </v-container>
+            </v-form>
+        </v-card-text>
+        <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="green" style="background-color:aliceblue;" flat v-on:click.stop="closeUserDialog()">CANCELAR</v-btn>
+            <v-btn color="green" style="background-color:aliceblue;" flat v-if="!userDialog.readonly || userDialog.deletion" v-on:click.stop="executeUserDialogRequest()">ACEPTAR</v-btn>
+        </v-card-actions>
+    </v-card>
+</v-dialog>
+
+@section Scripts {
+    <script type="text/javascript" src="~/js/users/main.js"></script>
+}

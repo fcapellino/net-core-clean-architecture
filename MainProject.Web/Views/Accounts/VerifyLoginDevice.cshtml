@@ -1,0 +1,102 @@
+﻿@model MainProject.Core.Handlers.Accounts.VerifyLoginDeviceRequestHandler.VerifyLoginDeviceRequest
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verificación de dispositivo</title>
+    <environment include="Development,Production">
+        <link type="image/x-icon" rel="icon" href="~/images/favicon.ico">
+        <link type="text/css" href="~/css/layout/vuetify.css" rel="stylesheet" />
+        <link type="text/css" href="~/css/layout/common.css" rel="stylesheet" />
+    </environment>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <v-app id="inspire">
+            <v-content>
+                <v-container fluid fill-height>
+                    <v-layout align-center justify-center>
+                        <v-flex xs12 sm8 md5>
+                            <v-card class="elevation-12">
+                                <v-toolbar dark color="primary">
+                                    <v-toolbar-title>Autenticapp - Ingrese el código de verificación</v-toolbar-title>
+                                    <v-spacer></v-spacer>
+                                </v-toolbar>
+                                <v-divider></v-divider>
+                                <v-card-text>
+                                    <span style="padding-bottom:15px;">El intento de inicio de sesión requiere una verificación adicional porque el dispositivo no fue reconocido. Para completar el inicio de sesión, ingrese el código de verificación enviado a su dirección de correo electrónico.</span>
+                                    <v-form action="/accounts/verifylogindevice" method="post" v-on:submit="validateBeforeSubmit" ref="enterCodeForm" id="enterCodeForm">
+                                        @Html.AntiForgeryToken()
+                                        <v-text-field v-model.trim="verificationCode"
+                                                      prepend-icon="lock"
+                                                      name="verificationCode"
+                                                      label="código"
+                                                      type="password"
+                                                      :rules="[v => (!!v && !utils.isNullOrEmpty(v)) || 'El campo es obligatorio']">
+                                        </v-text-field>
+                                    </v-form>
+                                </v-card-text>
+                                <v-progress-linear v-if="submit"
+                                                   :indeterminate="true"
+                                                   style="height:5px;margin:0px">
+                                </v-progress-linear>
+                                <v-divider></v-divider>
+                                <v-card-actions style="padding:14px">
+                                    <v-spacer></v-spacer>
+                                    <v-btn flat color="green" style="background-color:aliceblue" v-bind:disabled="submit" type="submit" form="enterCodeForm">VERIFICAR DISPOSITIVO</v-btn>
+                                </v-card-actions>
+                            </v-card>
+                            @if (Context.Request.Method.Equals(HttpMethod.Post.Method))
+                            {
+                                @if (!ViewData.ModelState.IsValid)
+                                {
+                                    var modelStateErrors = ViewData.ModelState
+                                                        .Where(x => x.Value.Errors.Count > 0)
+                                                        .SelectMany(x => x.Value.Errors)
+                                                        .Select(error => error.ErrorMessage);
+
+                                    <v-card class="elevation-12" style="margin-top:5px;padding:4px">
+                                        <v-alert :value="true" type="error">
+                                            @foreach (var error in modelStateErrors)
+                                            {
+                                                <p style="margin:0px">@error</p>
+                                            }
+                                        </v-alert>
+                                    </v-card>
+                                }
+                            }
+                        </v-flex>
+                    </v-layout>
+                </v-container>
+            </v-content>
+        </v-app>
+    </div>
+    <environment include="Development,Production">
+        <script type="text/javascript" src="~/js/layout/vuetify.js"></script>
+        <script type="text/javascript" src="~/js/layout/common.js"></script>
+    </environment>
+    <script type="text/javascript">
+        var mainModel = new Vue({
+            el: '#app',
+            data: () => ({
+                utils: window.utilities,
+                submit: null,
+                verificationCode: null
+            }),
+            methods: {
+                validateBeforeSubmit(event) {
+                    this.submit = this.$refs.enterCodeForm.validate();
+                    if (!this.submit) {
+                        event.preventDefault();
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
