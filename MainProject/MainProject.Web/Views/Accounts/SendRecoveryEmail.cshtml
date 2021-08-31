@@ -1,0 +1,120 @@
+﻿@model MainProject.Infrastructure.Handlers.Accounts.SendRecoveryEmailRequestHandler.SendRecoveryEmailRequest
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Send recovery email</title>
+    <environment include="Development,Production">
+        <link type="text/css" href="~/libraries/mdi/css/materialdesignicons.min.css" rel="stylesheet" />
+        <link type="text/css" href="~/libraries/vuetify/vuetify.min.css" rel="stylesheet" />
+        <link type="text/css" href="~/views/layout/css/roboto.css" rel="stylesheet" />
+        <link type="text/css" href="~/views/layout/css/common.css" rel="stylesheet" />
+    </environment>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <v-app id="inspire">
+            <v-app id="inspire">
+                <v-content>
+                    <v-container class="fill-height" fluid>
+                        <v-row align="center"
+                               justify="center">
+                            <v-col cols="12"
+                                   sm="8"
+                                   md="4">
+                                <v-card class="elevation-12">
+                                    <v-toolbar color="primary"
+                                               dark
+                                               flat>
+                                        <v-toolbar-title>Send recovery email</v-toolbar-title>
+                                        <v-spacer></v-spacer>
+                                    </v-toolbar>
+                                    <v-card-text>
+                                        <span style="padding-bottom:15px;">Enter your email address and we will send you a link to reset your password.</span>
+                                        <v-form action="/accounts/sendrecoveryemail" method="post" v-on:submit="validateBeforeSubmit" ref="recoverAccountForm" id="recoverAccountForm">
+                                            @Html.AntiForgeryToken()
+                                            <v-text-field v-model.trim="email"
+                                                          prepend-icon="mdi-account"
+                                                          name="email"
+                                                          label="email"
+                                                          type="text"
+                                                          :rules="[v => (!!v && utils.validateEmail(v)) || 'This field is required']">
+                                            </v-text-field>
+                                        </v-form>
+                                    </v-card-text>
+                                    <v-progress-linear v-if="submit"
+                                                       :indeterminate="true"
+                                                       style="height:5px;margin:0px">
+                                    </v-progress-linear>
+                                    <v-divider></v-divider>
+                                    <v-card-actions>
+                                        <v-spacer></v-spacer>
+                                        <v-btn small color="primary" v-bind:disabled="submit" type="submit" form="recoverAccountForm">SEND RECOVERY EMAIL</v-btn>
+                                    </v-card-actions>
+                                </v-card>
+                                @if (Context.Request.Method.Equals(HttpMethod.Post.Method))
+                                {
+                                    @if (ViewData.ModelState.IsValid)
+                                    {
+                                        <v-card class="elevation-12" style="margin-top:5px;padding:4px">
+                                            <v-alert :value="true" type="success" style="margin:0px;">
+                                                <p style="margin:0px">The email has been sent correctly.</p>
+                                            </v-alert>
+                                        </v-card>
+                                    }
+                                    else
+                                    {
+                                        var modelStateErrors = ViewData.ModelState
+                                                            .Where(x => x.Value.Errors.Count > 0)
+                                                            .SelectMany(x => x.Value.Errors)
+                                                            .Select(error => error.ErrorMessage);
+
+                                        <v-card class="elevation-12" style="margin-top:5px;padding:4px">
+                                            <v-alert :value="true" type="error" style="margin:0px;">
+                                                @foreach (var error in modelStateErrors)
+                                                {
+                                                    <p style="margin:0px">@error</p>
+                                                }
+                                            </v-alert>
+                                        </v-card>
+                                    }
+                                }
+                            </v-col>
+                        </v-row>
+                    </v-container>
+                </v-content>
+            </v-app>
+        </v-app>
+    </div>
+    <environment include="Development,Production">
+        <script type="text/javascript" src="~/libraries/polyfill/polyfill.min.js"></script>
+        <script type="text/javascript" src="~/libraries/vue/vue.min.js"></script>
+        <script type="text/javascript" src="~/libraries/vuetify/vuetify.min.js"></script>
+        <script type="text/javascript" src="~/views/layout/js/common.js"></script>
+    </environment>
+    <script type="text/javascript">
+        var mainModel = new Vue({
+            vuetify: new Vuetify(),
+            el: '#app',
+            data: () => ({
+                utils: window.utilities,
+                submit: null,
+                email: @Html.RawHtmlString(Model.Email)
+            }),
+            methods: {
+                validateBeforeSubmit(event) {
+                    this.submit = this.$refs.recoverAccountForm.validate();
+                    if (!this.submit) {
+                        event.preventDefault();
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
