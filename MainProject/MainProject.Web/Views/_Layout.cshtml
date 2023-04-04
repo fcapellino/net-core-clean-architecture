@@ -1,0 +1,160 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Application</title>
+    <environment include="Development,Production">
+        <link type="text/css" href="~/libraries/mdi/css/materialdesignicons.min.css" rel="stylesheet" />
+        <link type="text/css" href="~/libraries/vuetify/vuetify.min.css" rel="stylesheet" />
+        <link type="text/css" href="~/views/layout/css/roboto.css" rel="stylesheet" />
+        <link type="text/css" href="~/views/layout/css/common.css" rel="stylesheet" />
+    </environment>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <v-app id="inspire">
+            <v-app id="inspire">
+                <v-navigation-drawer v-model="drawer" clipped="true" app>
+                    <v-list dense>
+                        <v-list-item link v-on:click.stop="utils.redirectToUrl('/users/index')">
+                            <v-list-item-action>
+                                <v-icon>mdi-fast-forward</v-icon>
+                            </v-list-item-action>
+                            <v-list-item-content>
+                                <v-list-item-title>
+                                    USERS
+                                </v-list-item-title>
+                            </v-list-item-content>
+                        </v-list-item>
+                        <v-list-item link v-on:click.stop="utils.redirectToUrl('/errorlog')">
+                            <v-list-item-action>
+                                <v-icon>mdi-fast-forward</v-icon>
+                            </v-list-item-action>
+                            <v-list-item-content>
+                                <v-list-item-title>
+                                    ERROR LOG
+                                </v-list-item-title>
+                            </v-list-item-content>
+                        </v-list-item>
+                    </v-list>
+                </v-navigation-drawer>
+                <v-app-bar clipped-left="true" app color="blue darken-3" dark>
+                    <v-app-bar-nav-icon v-on:click.stop="drawer=!drawer"></v-app-bar-nav-icon>
+                    <v-toolbar-title style="width: 300px" class="ml-0 pl-4">
+                        <span class="hidden-sm-and-down">Application</span>
+                    </v-toolbar-title>
+                    <v-spacer></v-spacer>
+                    <v-toolbar-title class="caption" style="text-align:end;">
+                        <div>@User.FindFirst(ClaimTypes.GivenName).Value.ToUpper()</div>
+                        <div><small>@User.FindFirst(ClaimTypes.Role).Value.ToUpper()</small></div>
+                    </v-toolbar-title>
+                    <v-menu bottom left>
+                        <template v-slot:activator="{ on }">
+                            <v-btn dark
+                                   icon
+                                   v-on="on">
+                                <v-icon>mdi-account-box</v-icon>
+                            </v-btn>
+                        </template>
+                        <v-list>
+                            <v-list-item link v-on:click.stop="changePasswordDialog.show=true">
+                                <v-list-item-title>Change password</v-list-item-title>
+                            </v-list-item>
+                            <v-list-item link v-on:click.stop="document.getElementById('logoutform').submit()">
+                                <v-list-item-title>Logout</v-list-item-title>
+                                <v-form action="/accounts/logout" method="post" id="logoutform">
+                                    @Html.AntiForgeryToken()
+                                </v-form>
+                            </v-list-item>
+                        </v-list>
+                </v-app-bar>
+                <v-content>
+                    <v-container class="fill-height" fluid style="align-items:start;">
+                        <v-row wrap justify="center">
+                            @RenderBody()
+                            <v-dialog v-model="changePasswordDialog.show" fullscreen hide-overlay transition="dialog-bottom-transition">
+                                <v-card>
+                                    <v-toolbar dark color="primary">
+                                        <v-toolbar-title>Change password</v-toolbar-title>
+                                        <v-spacer></v-spacer>
+                                        <v-toolbar-items>
+                                            <v-btn icon dark v-on:click.stop="closeChangePasswordDialog()">
+                                                <v-icon>mdi-close</v-icon>
+                                            </v-btn>
+                                        </v-toolbar-items>
+                                    </v-toolbar>
+                                    <v-card-text>
+                                        <v-form ref="changePasswordForm">
+                                            <v-container>
+                                                <v-layout row justify-center>
+                                                    <v-flex xs3 style="margin:10px;">
+                                                        <v-text-field v-model.trim="changePasswordDialog.oldPassword"
+                                                                      label="current password"
+                                                                      prepend-inner-icon="mdi-lock"
+                                                                      filled
+                                                                      type="password"
+                                                                      :rules="[v => (!!v && !utils.isNullOrEmpty(v)) || 'This field is required']">
+                                                        </v-text-field>
+                                                    </v-flex>
+                                                    <v-flex xs3 style="margin:10px;">
+                                                        <v-text-field v-model.trim="changePasswordDialog.newPassword"
+                                                                      label="new password"
+                                                                      prepend-inner-icon="mdi-lock"
+                                                                      filled
+                                                                      type="password"
+                                                                      :rules="[v => (!!v && !utils.isNullOrEmpty(v)) || 'This field is required', v => (v && v.length >= 8) || 'The password must have at least eight characters']">
+                                                        </v-text-field>
+                                                    </v-flex>
+                                                    <v-flex xs3 style="margin:10px;">
+                                                        <v-text-field v-model.trim="changePasswordDialog.confirmedPassword"
+                                                                      label="confirm new password"
+                                                                      prepend-inner-icon="mdi-lock"
+                                                                      filled
+                                                                      type="password"
+                                                                      :rules="[v => (!!v && !utils.isNullOrEmpty(v)) || 'This field is required', changePasswordDialog.newPassword===changePasswordDialog.confirmedPassword || 'Passwords do not match']"></v-text-field>
+                                                    </v-flex>
+                                                </v-layout>
+                                                <v-layout row justify-center>
+                                                    <v-flex xs9 style="text-align:right;">
+                                                        <v-btn small color="primary" v-bind:disabled="pendingRequest" v-on:click.stop="changePassword()">ACCEPT</v-btn>
+                                                        <v-btn small color="primary" v-bind:disabled="pendingRequest" v-on:click.stop="closeChangePasswordDialog()">CANCEL</v-btn>
+                                                    </v-flex>
+                                                </v-layout>
+                                            </v-container>
+                                            <v-divider></v-divider>
+                                        </v-form>
+                                    </v-card-text>
+                                </v-card>
+                            </v-dialog>
+                            <v-snackbar v-model="snackbar.show"
+                                        :timeout="snackbar.timeout"
+                                        :color="snackbar.type"
+                                        bottom
+                                        right
+                                        vertical>
+                                <p style="margin:0px;">{{ snackbar.message }}</p>
+                                <v-btn dark text v-on:click.stop="$nextTick(() =>{ snackbar.show=false })">
+                                    CLOSE
+                                </v-btn>
+                            </v-snackbar>
+                        </v-row>
+                    </v-container>
+                </v-content>
+            </v-app>
+        </v-app>
+    </div>
+    @Html.AntiForgeryTokenTag()
+    @RenderSection("Scripts", required: false)
+    <environment include="Development,Production">
+        <script type="text/javascript" src="~/libraries/axios/axios.min.js"></script>
+        <script type="text/javascript" src="~/libraries/lodash/lodash.min.js"></script>
+        <script type="text/javascript" src="~/libraries/polyfill/polyfill.min.js"></script>
+        <script type="text/javascript" src="~/libraries/signalr/dist/browser/signalr.min.js"></script>
+        <script type="text/javascript" src="~/libraries/vue/vue.min.js"></script>
+        <script type="text/javascript" src="~/libraries/vuetify/vuetify.min.js"></script>
+        <script type="text/javascript" src="~/views/layout/js/common.js"></script>
+        <script type="text/javascript" src="~/views/layout/js/main.js"></script>
+    </environment>
+</body>
+</html>
